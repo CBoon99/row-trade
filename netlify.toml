@@ -1,0 +1,29 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[build.environment]
+  NODE_VERSION = "18"
+
+# Netlify Identity
+[identity]
+  enabled = true
+
+# Netlify Functions
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Netlify Forms
+[[forms]]
+  name = "report"
+  fields = ["reason", "details", "reporterId"]
+
+[[forms]]
+  name = "onboarding-quiz"
+  fields = ["userId", "answers", "score"]
