@@ -24,6 +24,7 @@ export const handler: Handler = async (event) => {
             buyNowPrice,
             openToOffers,
             examples,
+            photoUrls,
         } = body;
 
         // Safety check on content
@@ -55,7 +56,7 @@ export const handler: Handler = async (event) => {
         await db`
             INSERT INTO listings (
                 id, user_id, game_id, item_name, item_description, item_type,
-                listing_type, wants, buy_now_price, open_to_offers, examples, status
+                listing_type, wants, buy_now_price, open_to_offers, examples, photo_urls, status
             ) VALUES (
                 ${listingId},
                 ${user.id},
@@ -68,6 +69,7 @@ export const handler: Handler = async (event) => {
                 ${buyNowPrice || null},
                 ${openToOffers || false},
                 ${examples ? JSON.stringify(examples) : null},
+                ${photoUrls ? JSON.stringify(photoUrls) : null},
                 'active'
             )
         `;

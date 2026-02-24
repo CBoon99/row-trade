@@ -1,7 +1,7 @@
 {
-  "name": "rowblocks-abyssal-quest-3d",
+  "name": "row-trader",
   "version": "1.0.0",
-  "description": "3D Immersive Underwater Block Puzzle Adventure",
+  "description": "Row-Trader - Safe Trading Platform for Kids",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -16,22 +16,12 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.9.0",
-    "cannon-es": "^0.20.0",
-    "howler": "^2.2.4",
     "netlify-identity-widget": "^1.9.2",
-    "three": "^0.165.0",
     "zustand": "^4.4.7"
-  },
-  "overrides": {
-    "three": {
-      "@types/three": "^0.165.0"
-    }
   },
   "devDependencies": {
     "@netlify/functions": "^2.4.0",
-    "@types/howler": "^2.2.11",
     "@types/netlify-identity-widget": "^1.9.5",
-    "@types/three": "^0.165.0",
     "typescript": "^5.3.3",
     "vite": "^5.0.11",
     "vitest": "^1.1.0"

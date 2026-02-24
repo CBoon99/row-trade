@@ -3,121 +3,102 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rowblocks: Abyssal Quest</title>
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/ui.css">
+    <title>Row-Trader - Safe Trading for Kids</title>
+    <link rel="stylesheet" href="/src/ui/trading-styles.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #fff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        #app-container {
+            width: 100%;
+            min-height: 100vh;
+            position: relative;
+        }
+        
+        /* Loading Screen */
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            flex-direction: column;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 212, 255, 0.3);
+            border-top: 4px solid #00d4ff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #loading-message {
+            color: #00d4ff;
+            font-size: 1.2rem;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
 </head>
 <body>
-    <div id="game-container">
-        <canvas id="game-canvas"></canvas>
-        
-        <!-- HUD -->
-        <div id="hud">
-            <div id="top-bar">
-                <div class="stat">
-                    <span class="stat-icon">💎</span>
-                    <span id="pearls-count">0</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-icon">🌊</span>
-                    <span id="conservation-points">0</span>
-                </div>
-                <div class="stat">
-                    <span class="stat-icon">🐟</span>
-                    <span id="fish-count">0</span>
-                </div>
-            </div>
-            
-            <div id="ability-bar">
-                <button class="ability-btn" id="sonar-btn" title="Sonar Ping">
-                    <span>📡</span>
-                </button>
-                <button class="ability-btn" id="echo-btn" title="Echo Call">
-                    <span>🔊</span>
-                </button>
-                <button class="ability-btn" id="nudge-btn" title="Nudge">
-                    <span>💨</span>
-                </button>
-                <button class="ability-btn" id="speed-btn" title="Speed Burst">
-                    <span>⚡</span>
-                </button>
-                <button class="ability-btn" id="light-btn" title="Bioluminescence">
-                    <span>💡</span>
-                </button>
-            </div>
+    <div id="app-container">
+        <!-- Loading Screen -->
+        <div id="loading">
+            <div class="spinner"></div>
+            <p id="loading-message">Loading Row-Trader...</p>
         </div>
         
-        <!-- Start Screen -->
-        <div id="start-screen" class="screen">
-            <div class="screen-content">
-                <h1>Rowblocks: Abyssal Quest</h1>
-                <p class="subtitle">Dive into the depths of adventure</p>
-                <button id="start-btn" class="btn-primary">Start Game</button>
-                <div class="controls-info">
-                    <h3>Controls</h3>
-                    <p>WASD / Arrow Keys: Move</p>
-                    <p>Space: Sonar Ping</p>
-                    <p>1-5: Abilities</p>
-                    <p>E: Interact</p>
-                </div>
-            </div>
-        </div>
+        <!-- Trading Hub Container -->
+        <div id="trading-container"></div>
         
-        <!-- Marinepedia Screen -->
-        <div id="marinepedia-screen" class="screen hidden">
-            <div class="screen-content">
-                <h2>Marinepedia</h2>
-                <div id="collection-stats" style="margin: 1rem 0; color: #00d4ff; font-size: 1.1rem;">
-                    <span id="collection-progress">0 / 0</span> species discovered
-                </div>
-                <div id="marinepedia-content">
-                    <div id="fish-grid"></div>
-                </div>
-                <button id="close-marinepedia" class="btn-secondary">Close</button>
-            </div>
-        </div>
+        <!-- Friends Container -->
+        <div id="friends-container" style="display: none;"></div>
         
-        <!-- Fish Detail Modal -->
-        <div id="fish-detail-modal" class="screen hidden">
-            <div class="screen-content" style="max-width: 600px;">
-                <div id="fish-detail-content"></div>
-                <button id="close-fish-detail" class="btn-secondary">Back to Marinepedia</button>
-            </div>
-        </div>
+        <!-- Onboarding Container -->
+        <div id="onboarding-container" style="display: none;"></div>
         
-        <!-- Discovery Celebration -->
-        <div id="discovery-celebration" class="screen hidden">
-            <div class="screen-content">
-                <div id="discovery-content" style="text-align: center;">
-                    <div style="font-size: 6rem; margin-bottom: 1rem;">🎉</div>
-                    <h1 style="font-size: 3rem; color: #ffd700; text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);">NEW DISCOVERY!</h1>
-                    <div id="discovered-fish-name" style="font-size: 2rem; color: #00ffff; margin: 1rem 0;"></div>
-                    <div id="discovery-message" style="font-size: 1.2rem; color: #88d0ff; margin: 1rem 0;"></div>
-                    <button id="continue-discovery" class="btn-primary" style="margin-top: 2rem;">Continue Exploring!</button>
-                </div>
-            </div>
-        </div>
+        <!-- Auth Container -->
+        <div id="auth-container" style="display: none;"></div>
         
-        <!-- Pause Menu -->
-        <div id="pause-screen" class="screen hidden">
-            <div class="screen-content">
-                <h2>Paused</h2>
-                <button id="resume-btn" class="btn-primary">Resume</button>
-                <button id="marinepedia-btn" class="btn-secondary">Marinepedia</button>
-                <button id="quit-btn" class="btn-secondary">Quit</button>
-            </div>
-        </div>
+        <!-- Stories Container -->
+        <div id="stories-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 10, 30, 0.98); z-index: 500; overflow-y: auto;"></div>
         
-        <!-- Mission Alert -->
-        <div id="mission-alert" class="hidden">
-            <div class="alert-content">
-                <h3 id="mission-title"></h3>
-                <p id="mission-description"></p>
-            </div>
-        </div>
+        <!-- Admin Container -->
+        <div id="admin-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 10, 30, 0.98); z-index: 500; overflow-y: auto;"></div>
+        
+        <!-- Avatar Container -->
+        <div id="avatar-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 10, 30, 0.98); z-index: 500; overflow-y: auto;"></div>
+        
+        <!-- Transfer Escrow Container -->
+        <div id="transfer-escrow-container" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 10, 30, 0.98); z-index: 10000;"></div>
     </div>
     
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="/src/main.ts"></script>
 </body>
 </html>
-

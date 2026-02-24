@@ -18,6 +18,8 @@ export interface Review {
     toUserId: string;
     rating: number; // 1-5 stars
     comment: string;
+    photoUrl?: string; // Optional photo proof
+    helpfulCount: number;
     createdAt: number;
 }
 
@@ -56,11 +58,51 @@ export interface ExpertStatus {
     negotiationSkill: number; // 0-100
 }
 
+export interface TradeStreak {
+    currentStreak: number;
+    lastTradeDate: string; // YYYY-MM-DD
+    longestStreak: number;
+    multiplier: number; // 1.0, 1.5, 2.0, etc.
+}
+
+export interface SuccessStory {
+    id: string;
+    story: string; // Anonymized success tale
+    tradeType: string; // "Swap", "Buy", "Gift"
+    createdAt: number;
+}
+
+export interface Avatar {
+    url: string;
+    pendingApproval: boolean;
+    templateId?: string; // For pre-made templates
+}
+
+export interface MatchScore {
+    userId: string;
+    username: string;
+    sharedGames: string[];
+    sharedGamesCount: number;
+    compatibilityScore: number; // 0-100
+    matchPercentage: number; // 0-100
+}
+
+export interface TransferEscrow {
+    offerId: string;
+    status: 'pending' | 'confirmed_from' | 'confirmed_to' | 'completed' | 'expired';
+    codeFrom?: string;
+    codeTo?: string;
+    confirmedFrom: boolean;
+    confirmedTo: boolean;
+    expiresAt?: number;
+}
+
 export interface EnhancedListing extends Listing {
     listingType: 'sell' | 'swap' | 'open-to-offers';
     buyNowPrice?: number; // Rowbucks price for "Buy Now"
     openToOffers: boolean;
     examples?: string[]; // Example offers
+    photoUrls?: string[]; // Array of image URLs
     averageRating?: number;
     reviewCount?: number;
 }
@@ -113,6 +155,12 @@ interface TradingStoreExtended {
     // New: Gifts
     gifts: Gift[];
     receivedGifts: Gift[];
+    
+    // New: Trade Streak
+    tradeStreak: TradeStreak;
+    
+    // New: Success Stories
+    successStories: SuccessStory[];
     
     // Actions: Rowbucks
     addRowbucks: (amount: number, reason: string) => void;
@@ -182,6 +230,13 @@ export const useTradingStoreExtended = create<TradingStoreExtended>((set, get) =
     expertStatus: null,
     gifts: [],
     receivedGifts: [],
+    tradeStreak: {
+        currentStreak: 0,
+        lastTradeDate: '',
+        longestStreak: 0,
+        multiplier: 1.0,
+    },
+    successStories: [],
     
     // Rowbucks actions
     addRowbucks: (amount, reason) => {
@@ -475,6 +530,69 @@ export const useTradingStoreExtended = create<TradingStoreExtended>((set, get) =
         
         const state = get();
         localStorage.setItem('row-trader-expert-status', JSON.stringify(state.expertStatus));
+    },
+    
+    // Trade Streak
+    updateTradeStreak: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const streak = get().tradeStreak;
+        
+        if (streak.lastTradeDate === today) {
+            // Already traded today, no change
+            return;
+        }
+        
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        
+        let newStreak = streak.currentStreak;
+        let multiplier = 1.0;
+        
+        if (streak.lastTradeDate === yesterdayStr) {
+            // Continue streak
+            newStreak = streak.currentStreak + 1;
+        } else if (streak.lastTradeDate !== today) {
+            // Streak broken, reset
+            newStreak = 1;
+        }
+        
+        // Calculate multiplier based on streak
+        if (newStreak >= 7) multiplier = 2.0;
+        else if (newStreak >= 3) multiplier = 1.5;
+        else multiplier = 1.0;
+        
+        set({
+            tradeStreak: {
+                currentStreak: newStreak,
+                lastTradeDate: today,
+                longestStreak: Math.max(streak.longestStreak, newStreak),
+                multiplier,
+            },
+        });
+        
+        const state = get();
+        localStorage.setItem('row-trader-streak', JSON.stringify(state.tradeStreak));
+    },
+    
+    getStreakMultiplier: () => {
+        return get().tradeStreak.multiplier;
+    },
+    
+    // Success Stories
+    addSuccessStory: (storyData) => {
+        const story: SuccessStory = {
+            ...storyData,
+            id: `story-${Date.now()}`,
+            createdAt: Date.now(),
+        };
+        
+        set((state) => ({
+            successStories: [story, ...state.successStories].slice(0, 20), // Keep last 20
+        }));
+        
+        const state = get();
+        localStorage.setItem('row-trader-stories', JSON.stringify(state.successStories));
     },
     
     getExpertLevel: (tradesCompleted) => {

@@ -25,7 +25,7 @@ export class TradingUI {
                 username: 'Explorer',
                 favoriteGames: ['rowblocks'],
             };
-            this.store.setCurrentUser(defaultUser);
+            this.store.getState().setCurrentUser(defaultUser);
         }
     }
     
@@ -302,7 +302,7 @@ export class TradingUI {
         const usernameInput = document.getElementById('profile-username') as HTMLInputElement;
         if (usernameInput) {
             const currentUser = this.store.getState().currentUser!;
-            this.store.setCurrentUser({
+            this.store.getState().setCurrentUser({
                 ...currentUser,
                 username: usernameInput.value,
             });

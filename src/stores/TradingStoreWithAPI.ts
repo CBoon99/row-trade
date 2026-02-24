@@ -272,6 +272,20 @@ export const useTradingStoreWithAPI = create<TradingStoreWithAPI>((set, get) => 
                     rowbucks: state.rowbucks + (response.rowbucksEarned || 0),
                 }));
                 
+                // Update trade streak and generate success story
+                const extendedStore = useTradingStoreExtended.getState();
+                extendedStore.updateTradeStreak();
+                extendedStore.updateExpertStatus();
+                
+                // Generate success story
+                const offer = extendedStore.offers.find(o => o.id === offerId);
+                if (offer) {
+                    extendedStore.addSuccessStory({
+                        story: `A trader successfully completed a trade! They negotiated well and both parties were happy. Great bartering skills!`,
+                        tradeType: 'Swap',
+                    });
+                }
+                
                 // Refresh listings
                 await get().syncListings();
             } catch (error) {

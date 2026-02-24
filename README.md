@@ -1,62 +1,102 @@
-# Rowblocks: Abyssal Quest
+# Row-Trader
 
-A beautiful underwater exploration game where you play as a Rowlock, exploring vast ocean biomes, collecting marine life, and rescuing creatures from environmental threats.
+**Safe Trading Platform for Kids**
+
+Row-Trader is a secure, educational trading platform designed for kids to safely trade game items (Pokemon, Rowblocks, and more) while learning negotiation and bartering skills.
 
 ## Features
 
-- **Multiple Biomes**: Explore 7 distinct underwater environments
-- **Fish Collection**: Collect over 300 fish species with different rarity tiers
-- **Rescue Missions**: Complete dynamic missions to save marine life
-- **Player Abilities**: Use sonar ping, echo call, nudge, speed burst, and bioluminescence
-- **Progression System**: Earn pearls and conservation points to unlock upgrades
-- **Marinepedia**: Track your collected fish in a comprehensive encyclopedia
+- 🔐 **Secure Authentication** - Netlify Identity for safe user accounts
+- 🎮 **Game Matching** - Find traders who play the same games as you
+- 💬 **Negotiation System** - Make offers, counter-offers, and learn bartering
+- 👥 **Friends List** - Add friends and see shared games
+- 💰 **Rowbucks Currency** - Earn and spend virtual currency
+- ⭐ **Reviews & Ratings** - Build your trading reputation
+- 🛡️ **Safety First** - Parental controls, word filters, and reporting system
+- 📚 **Educational** - Learn negotiation skills through interactive trading
 
-## Controls
+## Tech Stack
 
-- **WASD / Arrow Keys**: Move your Rowlock
-- **Space / 1**: Sonar Ping - Reveals nearby fish and objects
-- **2**: Echo Call - Attracts fish to your location
-- **3**: Nudge - Push objects and break nets
-- **4**: Speed Burst - Quick dash ability
-- **5**: Bioluminescence - Toggle your light
-- **M**: Open Marinepedia
-- **ESC**: Pause menu
+- **Frontend**: TypeScript, Vite, Zustand
+- **Backend**: Netlify Functions (serverless)
+- **Database**: Neon Postgres (via Netlify DB)
+- **Auth**: Netlify Identity
+- **Deployment**: Netlify
 
-## How to Play
+## Setup
 
-1. Start the game and explore the ocean
-2. Use your sonar to find fish (they'll glow when detected)
-3. Swim near fish to collect them
-4. Complete rescue missions that appear periodically
-5. Fill your Marinepedia by collecting different fish species
-6. Earn conservation points by cleaning up litter and completing missions
+### Prerequisites
 
-## Technical Details
+- Node.js 18+
+- Netlify CLI (`npm install -g netlify-cli`)
 
-Built with vanilla JavaScript, HTML5 Canvas, and CSS3. The game uses a modular architecture for easy expansion and maintenance.
+### Installation
 
-### Project Structure
+```bash
+# Install dependencies
+npm install
 
-```
-js/
-  engine/        - Core game engine
-  entities/      - Player, fish, and other entities
-  world/         - Biome management
-  ui/            - User interface management
-  missions/      - Mission system
-  objects/       - Interactive objects (nets, lines, litter)
-  audio/         - Sound management
-  input/         - Input handling
+# Create Neon database (one-time setup)
+netlify db:create
+
+# Initialize database schema
+npm run db:init
+
+# Start development server
+npm run dev
 ```
 
-## Future Enhancements
+### Netlify Setup
 
-- Multiplayer support
-- Coral Cabin customization
-- More biomes and fish species
-- Advanced fish AI behaviors
-- Save/load game state
-- Achievement system
+1. **Enable Netlify Identity**:
+   - Go to your Netlify site dashboard
+   - Navigate to Identity → Enable Identity
+   - Configure email templates (optional)
 
-Enjoy exploring the depths! 🌊🐟
+2. **Database**:
+   - Already created via `netlify db:create`
+   - Schema initialized via `npm run db:init`
 
+3. **Deploy**:
+   ```bash
+   npm run netlify:deploy
+   ```
+
+## Development
+
+```bash
+# Local development with Netlify Functions
+netlify dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
+```
+
+## Project Structure
+
+```
+├── src/
+│   ├── api/              # API client for Netlify Functions
+│   ├── stores/           # Zustand state management
+│   ├── systems/          # Core systems (Auth, Safety)
+│   ├── ui/               # UI components
+│   └── utils/            # Utilities (matching, etc.)
+├── netlify/
+│   └── functions/         # Serverless functions
+└── index.html            # Main entry point
+```
+
+## Safety Features
+
+- Word filtering for inappropriate content
+- Parental approval flow for trades
+- Double-confirmation for trades
+- Report system for moderation
+- Age-appropriate content only
+
+## License
+
+MIT

@@ -41,11 +41,36 @@ export const tradingApi = {
         buyNowPrice?: number;
         openToOffers?: boolean;
         examples?: string[];
+        photoUrls?: string[];
     }) {
         return apiCall('/api-create-listing', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+    },
+    
+    /**
+     * Upload image (for listings/reviews)
+     */
+    async uploadImage(file: File, type: 'listing' | 'review' | 'avatar'): Promise<string> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', type);
+        
+        const response = await fetch('/.netlify/functions/api-upload-image', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${authManager.getToken()}`,
+            },
+            body: formData,
+        });
+        
+        if (!response.ok) {
+            throw new Error('Upload failed');
+        }
+        
+        const data = await response.json();
+        return data.imageUrl;
     },
 
     /**

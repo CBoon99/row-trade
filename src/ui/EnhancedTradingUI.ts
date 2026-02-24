@@ -26,6 +26,7 @@ export class EnhancedTradingUI {
         this.container.style.display = 'block';
         const expertStatus = this.store.getState().expertStatus;
         const rowbucks = this.store.getState().rowbucks;
+        const tradeStreak = this.store.getState().tradeStreak;
         
         this.container.innerHTML = `
             <div class="enhanced-trading-hub">
@@ -40,6 +41,13 @@ export class EnhancedTradingUI {
                         <span class="rowbucks-amount">${rowbucks} Rowbucks</span>
                         <button class="btn-small" onclick="enhancedTradingUI.showBuyRowbucks()">Buy More</button>
                     </div>
+                    ${tradeStreak.currentStreak > 0 ? `
+                        <div class="streak-display">
+                            <span class="streak-icon">🔥</span>
+                            <span class="streak-text">${tradeStreak.currentStreak} Day Streak!</span>
+                            ${tradeStreak.multiplier > 1 ? `<span class="streak-multiplier">${tradeStreak.multiplier}x Bonus</span>` : ''}
+                        </div>
+                    ` : ''}
                     ${expertStatus ? `
                         <div class="expert-status">
                             <span class="expert-badge ${expertStatus.level}">${this.getExpertLabel(expertStatus.level)}</span>
@@ -52,7 +60,7 @@ export class EnhancedTradingUI {
                     <button class="action-btn swap-btn" onclick="enhancedTradingUI.showBrowse()">
                         <span class="action-icon">↔️</span>
                         <span class="action-title">Swap It</span>
-                        <span class="action-desc">Swap your Abyssal Block for a Friend's</span>
+                        <span class="action-desc">Swap your game items with friends</span>
                     </button>
                     
                     <button class="action-btn trade-btn" onclick="enhancedTradingUI.showBrowse()">
@@ -66,6 +74,20 @@ export class EnhancedTradingUI {
                         <span class="action-title">Gift It</span>
                         <span class="action-desc">Gift a Gem or Rare Fish to a Buddy</span>
                     </button>
+                    
+                    <button class="action-btn stories-btn" onclick="enhancedTradingUI.showStoriesFeed()">
+                        <span class="action-icon">🌟</span>
+                        <span class="action-title">Success Stories</span>
+                        <span class="action-desc">Learn from other traders' wins!</span>
+                    </button>
+                    
+                    ${this.store.getState().currentUser?.user_metadata?.role === 'admin' ? `
+                        <button class="action-btn admin-btn" onclick="enhancedTradingUI.showAdminDashboard()">
+                            <span class="action-icon">🛡️</span>
+                            <span class="action-title">Admin Dashboard</span>
+                            <span class="action-desc">Moderation & Management</span>
+                        </button>
+                    ` : ''}
                 </div>
                 
                 <div class="hub-nav">
@@ -107,6 +129,7 @@ export class EnhancedTradingUI {
         }
         
         const listings = this.store.getState().getListingsWithSharedGames();
+        const matchScores = this.store.getState().matchScores;
         const currentUser = this.store.getState().currentUser!;
         
         let listingsHTML = '';
@@ -724,7 +747,7 @@ export class EnhancedTradingUI {
         const offer = this.store.getState().offers.find(o => o.id === offerId);
         if (!offer) return;
         
-        this.store.addReview({
+        this.store.getState().addReview({
             tradeId: offerId,
             fromUserId: this.store.getState().currentUser?.id || '',
             toUserId: offer.toUserId,
@@ -733,7 +756,7 @@ export class EnhancedTradingUI {
         });
         
         // Earn Rowbucks for leaving review
-        this.store.addRowbucks(2, 'Left review');
+        this.store.getState().addRowbucks(2, 'Left review');
         
         alert('✅ Review submitted! Thanks for helping the community!');
         (event.target as HTMLElement).closest('.modal-overlay')?.remove();
@@ -802,7 +825,7 @@ export class EnhancedTradingUI {
     }
     
     /**
-     * Submit offer
+     * Submit offer (with optional barter mini-game)
      */
     async submitOffer(event: Event, listingId: string): Promise<void> {
         event.preventDefault();
@@ -816,6 +839,25 @@ export class EnhancedTradingUI {
         if (this.store.getState().checkSafetyViolations(offering + ' ' + wanting)) {
             alert('⚠️ Your offer contains prohibited content. Please revise.');
             return;
+        }
+        
+        // Show barter mini-game (optional)
+        const playGame = confirm('🎮 Want to play a quick Rowblocks puzzle for bonus Rowbucks?');
+        let bonusRowbucks = 0;
+        
+        if (playGame) {
+            const { BarterMiniGameUI } = await import('./BarterMiniGameUI');
+            const gameUI = new BarterMiniGameUI();
+            
+            await new Promise<void>((resolve) => {
+                gameUI.show((result) => {
+                    bonusRowbucks = result.bonusRowbucks;
+                    if (result.won && bonusRowbucks > 0) {
+                        this.store.getState().addRowbucks(bonusRowbucks, 'Barter mini-game bonus');
+                    }
+                    resolve();
+                });
+            });
         }
         
         try {
@@ -836,7 +878,11 @@ export class EnhancedTradingUI {
                 });
             }
             
-            alert('✅ Offer submitted!');
+            if (bonusRowbucks > 0) {
+                alert(`✅ Offer submitted! 🎉 You earned ${bonusRowbucks} bonus Rowbucks!`);
+            } else {
+                alert('✅ Offer submitted!');
+            }
             (event.target as HTMLElement).closest('.modal-overlay')?.remove();
             this.showMyOffers();
         } catch (error: any) {

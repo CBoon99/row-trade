@@ -1,13 +1,6 @@
-import * as THREE from 'three';
-import { Game } from './systems/Game';
-import { UIManager } from './ui/UIManager';
-import { GameHUD } from './ui/GameHUD';
-import { LevelSelectUI } from './ui/LevelSelectUI';
-import { UpgradeShopUI } from './ui/UpgradeShopUI';
-import { MainMenuUI } from './ui/MainMenuUI';
-import { MarinepediaUI } from './ui/MarinepediaUI';
-import { CustomizationShop } from './ui/CustomizationShop';
-import { TradingUI } from './ui/TradingUI';
+// Row-Trader: Safe Trading Platform for Kids
+// Main entry point - initializes trading platform only
+
 import { EnhancedTradingUI } from './ui/EnhancedTradingUI';
 import { FriendsListUI } from './ui/FriendsListUI';
 import { OnboardingUI } from './ui/OnboardingUI';
@@ -16,362 +9,106 @@ import { authManager } from './systems/AuthManager';
 import { useTradingStoreExtended } from './stores/TradingStoreExtended';
 import { useTradingStoreWithAPI } from './stores/TradingStoreWithAPI';
 
-// Initialize game when DOM is ready
-const initGame = async () => {
+// Initialize Row-Trader when DOM is ready
+const initRowTrader = async () => {
     const loadingEl = document.getElementById('loading');
-    const canvasContainer = document.getElementById('canvas-container');
-    
-    console.log('🚀 Starting game initialization...');
-    console.log('Loading element:', loadingEl);
-    console.log('Canvas container:', canvasContainer);
-    
-    if (!canvasContainer) {
-        console.error('❌ Canvas container not found!');
-        if (loadingEl) {
-            loadingEl.innerHTML = '<p style="color: #ff0000;">Error: Canvas container not found!</p>';
-        }
-        return;
-    }
+    const loadingMessage = document.getElementById('loading-message');
     
     try {
-        console.log('📦 Init step 1: Creating Game instance...');
-        // Initialize game
-        const game = new Game(canvasContainer);
-        console.log('✅ Init step 1 complete: Game instance created');
+        if (loadingMessage) {
+            loadingMessage.textContent = 'Initializing Row-Trader...';
+        }
         
-        console.log('🔧 Init step 2: Initializing game systems...');
-        await game.init();
-        console.log('✅ Init step 2 complete: Game systems initialized');
+        console.log('🚀 Starting Row-Trader initialization...');
         
-        console.log('✅ Game systems initialized successfully');
+        // Initialize UI components
+        if (loadingMessage) {
+            loadingMessage.textContent = 'Loading trading hub...';
+        }
         
-        // Initialize UI systems
-        const uiManager = new UIManager(game);
-        const gameHUD = new GameHUD(
-            document.getElementById('game-hud-container')!,
-            game.getLevelSystem(),
-            game.getUpgradeSystem(),
-            game // Pass game reference for depth access
-        );
-        const levelSelectUI = new LevelSelectUI(
-            document.getElementById('level-select-container')!,
-            game.getLevelSystem(),
-            (levelId) => {
-                console.log(`Level ${levelId} selected`);
-                const levelSystem = game.getLevelSystem();
+        const enhancedTradingUI = new EnhancedTradingUI('trading-container');
+        const friendsListUI = new FriendsListUI('friends-container');
+        const onboardingUI = new OnboardingUI('onboarding-container');
+        const authUI = new AuthUI('auth-container');
+        
+        // Make globally accessible for debugging
+        (window as any).enhancedTradingUI = enhancedTradingUI;
+        (window as any).friendsListUI = friendsListUI;
+        (window as any).onboardingUI = onboardingUI;
+        (window as any).authUI = authUI;
+        
+        console.log('✅ UI components initialized');
+        
+        // Initialize authentication
+        if (loadingMessage) {
+            loadingMessage.textContent = 'Setting up authentication...';
+        }
+        
+        authManager.onAuthChange(async (user) => {
+            if (!user) {
+                // Not logged in - show auth UI
+                authUI.showLoginRequired();
+                enhancedTradingUI.hide();
+                friendsListUI.hide();
+                onboardingUI.hide();
+            } else {
+                // Logged in - hide auth UI
+                authUI.hide();
                 
-                if (levelSystem.startLevel(levelId)) {
-                    console.log(`Level ${levelId} started successfully`);
-                    
-                    // Reload blocks for the new level
-                    const blockSystem = game.getBlockPuzzleSystem();
-                    if (blockSystem && typeof blockSystem.loadLevelBlocks === 'function') {
-                        blockSystem.loadLevelBlocks();
-                    } else {
-                        console.error('BlockPuzzleSystem.loadLevelBlocks is not available');
+                // Sync data from API
+                const apiStore = useTradingStoreWithAPI.getState();
+                try {
+                    if (loadingMessage) {
+                        loadingMessage.textContent = 'Syncing your data...';
                     }
                     
-                    // Hide all UI overlays
-                    levelSelectUI.hide();
-                    const startScreen = document.getElementById('start-screen');
-                    if (startScreen) {
-                        startScreen.classList.add('hidden');
-                    }
-                    const upgradeShop = document.getElementById('upgrade-shop-container');
-                    if (upgradeShop) {
-                        upgradeShop.style.display = 'none';
-                    }
-                    
-                    // Show canvas and start game
-                    const canvasContainer = document.getElementById('canvas-container');
-                    if (canvasContainer) {
-                        canvasContainer.style.display = 'block';
-                    }
-                    
-                    // Start the game
-                    console.log('Starting game...');
-                    game.start();
-                    console.log('Game started, isRunning:', game.isRunning);
-                    
-                    // Show game HUD
-                    gameHUD.show();
+                    await apiStore.syncListings();
+                    await apiStore.syncFriends();
+                    await apiStore.syncUserData();
+                } catch (error) {
+                    console.error('Error syncing data:', error);
+                }
+                
+                // Check if onboarding needed
+                const store = useTradingStoreExtended.getState();
+                if (onboardingUI.needsOnboarding()) {
+                    onboardingUI.show();
                 } else {
-                    console.error(`Failed to start level ${levelId}`);
-                }
-            }
-        );
-                const upgradeShopUI = new UpgradeShopUI(
-                    document.getElementById('upgrade-shop-container')!,
-                    game.getUpgradeSystem()
-                );
-                const marinepediaUI = new MarinepediaUI(
-                    document.getElementById('marinepedia-container')!
-                );
-                const customizationShopUI = new CustomizationShop(
-                    document.getElementById('customization-shop-container')!
-                );
-                const tradingUI = new TradingUI('trading-container');
-                const enhancedTradingUI = new EnhancedTradingUI('trading-container');
-                const friendsListUI = new FriendsListUI('friends-container');
-                const onboardingUI = new OnboardingUI('onboarding-container');
-                const authUI = new AuthUI('auth-container');
-                const mainMenuUI = new MainMenuUI(
-            document.getElementById('start-screen')!,
-            () => {
-                mainMenuUI.hide();
-                levelSelectUI.show();
-            },
-            () => {
-                mainMenuUI.hide();
-                upgradeShopUI.show();
-            },
-            () => {
-                // Settings - placeholder
-                console.log('Settings clicked');
-            }
-        );
-        
-                // Make UI accessible globally
-                (window as any).gameHUD = gameHUD;
-                (window as any).levelSelectUI = levelSelectUI;
-                (window as any).upgradeShopUI = upgradeShopUI;
-                (window as any).marinepediaUI = marinepediaUI;
-                (window as any).customizationShopUI = customizationShopUI;
-                (window as any).tradingUI = tradingUI;
-                (window as any).enhancedTradingUI = enhancedTradingUI;
-                (window as any).friendsListUI = friendsListUI;
-                (window as any).onboardingUI = onboardingUI;
-                (window as any).authUI = authUI;
-                (window as any).mainMenuUI = mainMenuUI;
-                
-                // Initialize authentication
-                authManager.onAuthChange(async (user) => {
-                    if (!user) {
-                        // Not logged in - show auth UI
-                        authUI.showLoginRequired();
-                    } else {
-                        // Logged in - hide auth UI and initialize trading
-                        authUI.hide();
-                        
-                        // Sync data from API
-                        const apiStore = useTradingStoreWithAPI.getState();
-                        try {
-                            await apiStore.syncListings();
-                            await apiStore.syncFriends();
-                            await apiStore.syncUserData();
-                        } catch (error) {
-                            console.error('Error syncing data:', error);
-                            // Fallback to localStorage if API fails
-                        }
-                        
-                        // Check if onboarding needed
-                        const store = useTradingStoreExtended.getState();
-                        if (onboardingUI.needsOnboarding()) {
-                            onboardingUI.show();
-                        } else {
-                            // Initialize enhanced trading hub
-                            enhancedTradingUI.showEnhancedHub();
-                        }
-                        
-                        // Update expert status on load
-                        store.updateExpertStatus();
-                    }
-                });
-        
-        // Hide loading screen
-        if (loadingEl) {
-            loadingEl.classList.add('hidden');
-        }
-        
-        // Update menu stats
-        const updateMenuStats = () => {
-            const levels = game.getLevelSystem().getAllLevels().filter(l => l.stars > 0).length;
-            const stars = game.getLevelSystem().getAllLevels().reduce((sum, l) => sum + l.stars, 0);
-            const pearls = game.getUpgradeSystem().getCurrency();
-            mainMenuUI.updateStats(levels, stars, pearls);
-        };
-        updateMenuStats();
-        
-                // Setup menu button in HUD
-                document.addEventListener('keydown', (e) => {
-                    // Check if any UI is open
-                    const marinepedia = document.getElementById('marinepedia-container');
-                    const shop = document.getElementById('customization-shop-container');
-                    const levelSelect = document.getElementById('level-select-container');
-                    const upgradeShop = document.getElementById('upgrade-shop-container');
-                    
-                    const tradingContainer = document.getElementById('trading-container');
-                    const isUIOpen = (marinepedia?.style.display === 'block') ||
-                                    (shop?.style.display === 'block') ||
-                                    (levelSelect?.style.display === 'block') ||
-                                    (upgradeShop?.style.display === 'block') ||
-                                    (tradingContainer?.style.display !== 'none' && tradingContainer?.style.display !== '');
-                    
-                    if (e.key === 'Escape') {
-                        if (isUIOpen) {
-                            // Close any open UI
-                            marinepediaUI.hide();
-                            customizationShopUI.hide();
-                            upgradeShopUI.hide();
-                            levelSelectUI.hide();
-                        } else if (game.isRunning) {
-                            game.stop();
-                            levelSelectUI.show();
-                        } else {
-                            levelSelectUI.show();
-                        }
-                    }
-                    if (e.key === 'u' || e.key === 'U') {
-                        if (!isUIOpen) upgradeShopUI.show();
-                    }
-                    if (e.key === 'm' || e.key === 'M') {
-                        if (!isUIOpen) marinepediaUI.show();
-                        else if (marinepedia?.style.display === 'block') marinepediaUI.hide();
-                    }
-                    if (e.key === 'c' || e.key === 'C') {
-                        if (!isUIOpen) customizationShopUI.show();
-                        else if (shop?.style.display === 'block') customizationShopUI.hide();
-                    }
-                    if (e.key === 't' || e.key === 'T') {
-                        if (tradingContainer) {
-                            if (tradingContainer.style.display === 'none' || tradingContainer.style.display === '') {
-                                tradingContainer.style.display = 'block';
-                                if (window.enhancedTradingUI) {
-                                    window.enhancedTradingUI.showEnhancedHub();
-                                } else {
-                                    tradingUI.showTradingHub();
-                                }
-                            } else {
-                                tradingContainer.style.display = 'none';
-                            }
-                        }
-                    }
-                });
-        
-        // Update HUD in game loop (only when game is running)
-        let hudAnimationId: number | null = null;
-        const updateHUD = () => {
-            try {
-                if (game.isRunning) {
-                    gameHUD.update();
-                }
-                hudAnimationId = requestAnimationFrame(updateHUD);
-            } catch (error) {
-                console.error('HUD update error:', error);
-                // Stop the loop on error
-                if (hudAnimationId !== null) {
-                    cancelAnimationFrame(hudAnimationId);
-                }
-            }
-        };
-        updateHUD();
-        
-        // Setup VR button (if available)
-        if (navigator.xr) {
-            const vrBtn = document.getElementById('vr-btn');
-            if (vrBtn) {
-                vrBtn.style.display = 'inline-block';
-                vrBtn.addEventListener('click', async () => {
-                    try {
-                        await game.enableVR();
-                        const startScreen = document.getElementById('start-screen');
-                        if (startScreen) {
-                            startScreen.classList.add('hidden');
-                        }
-                    } catch (err) {
-                        console.error('VR not available:', err);
-                        alert('VR not available on this device');
-                    }
-                });
-            }
-        }
-        
-        // Make game accessible globally for debugging
-        (window as any).game = game;
-        
-                // Connect the HTML "Dive In" button if it exists
-                const startBtn = document.getElementById('start-btn');
-                if (startBtn) {
-                    startBtn.addEventListener('click', () => {
-                        mainMenuUI.hide();
-                        levelSelectUI.show();
-                    });
+                    enhancedTradingUI.showEnhancedHub();
                 }
                 
-                // DEBUG: Connect force start button
-                const debugStartBtn = document.getElementById('debug-start');
-                if (debugStartBtn) {
-                    debugStartBtn.style.display = 'block';
-                    debugStartBtn.addEventListener('click', () => {
-                        console.log('🔧 DEBUG: Force start button clicked');
-                        // Hide loading screen
-                        if (loadingEl) {
-                            loadingEl.classList.add('hidden');
-                        }
-                        // Start level 1 if none selected
-                        const levelSystem = game.getLevelSystem();
-                        if (!levelSystem.getCurrentLevel()) {
-                            levelSystem.startLevel(1);
-                        }
-                        // Start game
-                        game.start();
-                        // Show canvas
-                        if (canvasContainer) {
-                            canvasContainer.style.display = 'block';
-                        }
-                        // Show HUD
-                        gameHUD.show();
-                    });
-                    console.log('✅ Debug start button connected');
-                }
-                
-                console.log('✅ Game initialized successfully!');
-        console.log('Game object:', game);
-        console.log('Level system:', game.getLevelSystem());
-        console.log('Available levels:', game.getLevelSystem().getAllLevels());
+                store.updateExpertStatus();
+            }
+            
+            // Hide loading screen
+            if (loadingEl) {
+                loadingEl.classList.add('hidden');
+            }
+        });
         
-        // Hide loading screen on success
-        if (loadingEl) {
-            loadingEl.classList.add('hidden');
-            console.log('✅ Loading screen hidden');
+        // Check initial auth state
+        const currentUser = authManager.getCurrentUser();
+        if (!currentUser) {
+            authUI.showLoginRequired();
+            if (loadingEl) {
+                loadingEl.classList.add('hidden');
+            }
         }
         
-        // Verify canvas is visible
-        const canvas = canvasContainer.querySelector('canvas');
-        if (canvas) {
-            console.log('✅ Canvas found:', canvas.width, 'x', canvas.height);
-        } else {
-            console.warn('⚠️ Canvas not found in container!');
-        }
+        console.log('✅ Row-Trader initialized successfully');
+        
     } catch (error) {
-        console.error('❌ Failed to initialize game:', error);
-        console.error('Error name:', error instanceof Error ? error.name : 'Unknown');
-        console.error('Error message:', error instanceof Error ? error.message : String(error));
-        console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
-        
-        // Show error to user
-        if (loadingEl) {
-            loadingEl.innerHTML = `
-                <div style="color: #ff0000; text-align: center; padding: 2rem;">
-                    <h2>❌ Failed to Load Game</h2>
-                    <p>Error: ${error instanceof Error ? error.message : String(error)}</p>
-                    <p style="font-size: 0.9rem; margin-top: 1rem;">Check browser console (F12) for details.</p>
-                    <button onclick="location.reload()" style="margin-top: 1rem; padding: 0.5rem 1rem; background: #00d4ff; border: none; border-radius: 5px; cursor: pointer; color: white; font-weight: bold;">
-                        Reload Page
-                    </button>
-                </div>
-            `;
+        console.error('❌ Failed to initialize Row-Trader:', error);
+        if (loadingMessage) {
+            loadingMessage.textContent = 'Failed to load. Please refresh the page.';
+            loadingMessage.style.color = '#ff4444';
         }
-        
-        // Also show alert for immediate feedback
-        alert(`Game failed to load: ${error instanceof Error ? error.message : String(error)}\n\nCheck console (F12) for details.`);
     }
 };
 
-// Try immediate initialization if DOM is already loaded
+// Start when DOM is ready
 if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initGame);
+    document.addEventListener('DOMContentLoaded', initRowTrader);
 } else {
-    // DOM is already loaded
-    initGame();
+    initRowTrader();
 }
