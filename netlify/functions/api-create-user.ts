@@ -1,6 +1,6 @@
 import { Handler } from '@netlify/functions';
 import { getDb } from './utils/db';
-import { initializeSchema } from '../db-schema';
+import { initializeSchema } from './db-schema';
 
 export const handler: Handler = async (event) => {
     if (event.httpMethod !== 'POST') {
